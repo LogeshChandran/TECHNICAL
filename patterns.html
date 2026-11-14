@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Pattern guide</title></head><body><main>
+<h1>Pattern guide</h1><p class="muted">What each pattern means and the main rules the scanner uses. ATR = average candle range of the last 14 candles of that
+timeframe (rupees for stocks, points for indices), so rules scale with each stock's normal movement.</p><div id="g"></div></main><script src="common.js"></script><script>
+nav('Pattern guide');
+const RULES={head_shoulders:'Uptrend before (hard rule). Head at least 1 ATR above both shoulders, shoulders level, balanced timing, neckline through the two troughs. Breakout: close below the neckline within one pattern width. Target: neckline minus head height.',
+ inv_head_shoulders:'Mirror of head and shoulders: downtrend before, close above the neckline. Target: neckline plus height.',
+ double_top:'Uptrend into peak 1 starting below the neckline (hard rule). Peaks equal within the larger of 0.6 ATR or 1.5% of price on 1D (0.5% 1H, 1% 4H, 3% 1W, 4% 1M), peak 2 not clearly higher. Dip at least 2 ATR and a minimum % of price. Breakout: close below the neckline within one pattern width, else it expires. Target: neckline minus height.',
+ double_bottom:'Mirror of the double top (W). Target: neckline plus height.',triple_top:'Uptrend before. Three equal peaks; support = the lower of the two troughs. Target: support minus height.',
+ triple_bottom:'Mirror of the triple top.',bull_flag:'Pole: at least 4 ATR and a minimum % move in 3-15 bars, most candles up. Flag: 4-20 bars (max 1.5x pole), parallel channel flat or sloping down, gives back at most 50% of the pole. Breakout: close above the channel. Target: breakout plus pole height.',
+ bear_flag:'Mirror of the bull flag.',bull_pennant:'Same pole as a flag, then a small converging triangle (width shrinks at least 40%).',bear_pennant:'Mirror of the bull pennant.',
+ ascending_triangle:'Flat resting top line, rising lows, at least 5 touches, narrows at least 35%.',descending_triangle:'Flat resting bottom line, falling highs.',
+ symmetrical_triangle:'Both lines converge; breakout direction decides UP or DOWN.',cup_handle:'1D/1W/1M only. Uptrend before. Rims within 5%, depth 12-35%. Rounded U (curve fit, at least 45% of bars in the bottom third, low near the middle). Handle in the upper half, 4-15% pullback, at most 1/4 of the cup length. Breakout: close above the rim. Target: rim plus cup depth.',
+ rising_wedge:'Both lines rise and converge; usually breaks down.',falling_wedge:'Both lines fall and converge; usually breaks up.',rectangle:'Flat support and resistance.'};
+let h='';for(const fam of ['reversal','continuation']){h+='<h2>'+fam[0].toUpperCase()+fam.slice(1)+' patterns</h2><div class="rows">';
+ Object.entries(PATTERN_INFO).filter(([k,v])=>v[1]===fam&&RULES[k]).forEach(([k,v])=>{h+=`<div class="r"><b>${v[0]}</b> <a href="explore.html?pat=${k}&smin=0">see examples</a><div class="desc">${esc(v[2])}</div><div class="small">${esc(RULES[k])}</div></div>`;});h+='</div>';}
+$('g').innerHTML=h;
+</script></body></html>

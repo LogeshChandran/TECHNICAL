@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Pattern chart</title><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script></head><body><main>
+<div id="cards"></div><label class="small"><input type="checkbox" id="ema"> EMA 20/50</label>
+<h2>Same date on other timeframes</h2><div class="chips" id="tfs"></div><div id="ov" class="chart"></div>
+<h2>Details</h2><table id="info"></table>
+<p class="muted">Candles after the breakout are shown for review; they were not known at detection time. Not investment advice.</p></main><script src="common.js"></script><script src="chartlib.js"></script><script>
+nav('');const U=new URLSearchParams(location.search),I=U.get('i'),S=U.get('s');
+async function main(){const all=await j('data/symbols/'+I+'_'+safeName(S)+'.json').catch(()=>[]);let r;
+ if(U.get('watch')){const w=(await j('data/watchlist.json')).find(x=>x.instrument===I&&x.symbol===S&&x.time===U.get('t')&&x.timeframe===U.get('tf')&&x.pattern===U.get('p'));
+  if(!w){$('cards').textContent='Watchlist item not found (the list changes daily).';return;}
+  r=Object.assign({id:'watch',breakout_time:'',direction:'',outcome:'forming'},w);}
+ else r=all.find(x=>x.id===U.get('id'));
+ if(!r){$('cards').textContent='Record not found';return;}
+ const draw=async()=>{$('cards').innerHTML='';if(r.id==='watch'){const el=document.createElement('div');el.className='card';
+   el.innerHTML='<h3>'+esc(S)+' | '+r.timeframe+' | '+esc(pretty(r.pattern))+' (forming) | score '+r.score+'</h3><div class="desc">'+esc((PATTERN_INFO[r.pattern]||[])[2]||'')+'</div>'+whyHtml(r)+'<div class="chart" id="c-w"></div>';
+   $('cards').appendChild(el);drawPattern(r,'c-w',{ema:$('ema').checked,height:520});}
+  else card(r,$('cards'),{ema:$('ema').checked,others:all.filter(o=>o.timeframe===r.timeframe),after:60});};
+ $('ema').onchange=draw;await draw();
+ const center=(r.breakout_time||r.time).slice(0,10);
+ $('tfs').innerHTML=TFS.map(t=>`<span class="chip" data-t="${t}">${t}</span>`).join('');
+ $('tfs').querySelectorAll('.chip').forEach(x=>x.onclick=()=>{$('tfs').querySelectorAll('.chip').forEach(y=>y.classList.toggle('on',y===x));
+  drawOverview(I,S,x.dataset.t,'ov',all,{center,onPick:id=>location.href='chart.html?i='+I+'&s='+encodeURIComponent(S)+'&id='+id});});
+ $('tfs').querySelector('[data-t="'+(r.timeframe==='1D'?'1W':'1D')+'"]').click();
+ const keys=['name','sector','groups','family','breakout_time','breakout_date','close','breakout_level','pattern_height','target','target_pct','breakout_quality','breakout_strength','volume_ratio','volume_flag',
+  'rs_63d','delivery_pct','event','mtf_list','outcome','outcome_time','max_fav_pct','max_adv_pct','pattern_start','pattern_end','visible_from','touches_upper','touches_lower','violations','rank_prob','strictness','scanner_version'];
+ $('info').innerHTML=keys.filter(k=>r[k]!==undefined&&r[k]!==null&&r[k]!=='').map(k=>'<tr><th>'+k+'</th><td>'+esc(r[k])+'</td></tr>').join('');}
+main().catch(e=>$('cards').textContent='Error: '+e.message);
+</script></body></html>

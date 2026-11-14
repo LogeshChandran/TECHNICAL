@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Pattern scanner - overview</title><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script></head><body><main>
+<h1>Market overview</h1><div id="meta" class="muted"></div><div id="banner" class="banner"></div>
+<div class="kpis" id="kpis"></div><h2>Breakouts per day (last 45 days)</h2><div id="trend" style="height:260px"></div>
+<h2>Indices</h2><div id="idx" class="grid"></div><h2>Multi-timeframe breakouts today</h2><div id="mtf" class="rows"></div>
+<h2>My watchlist - near breakout</h2><div id="wl" class="rows"></div>
+<p class="muted">Detection tool. Score = pattern quality, not a probability of profit. Not investment advice.</p></main><script src="common.js"></script><script src="chartlib.js"></script><script>
+nav('Home');
+(async()=>{const m=await j('data/meta.json'),o=await j('data/overview.json');
+ $('meta').textContent='Scan date '+m.scan_date+' | built '+m.built+' | v'+m.version+' | strictness '+m.strictness+(m.ranker?' | learned ranking on':'');
+ $('banner').className='banner '+m.status;$('banner').textContent='Data status: '+m.status+' - coverage '+Object.entries(m.coverage).map(([k,v])=>k+' '+Math.round(v.pct*100)+'%').join(' | ');
+ const t=o.today,ex=q=>'explore.html?from='+o.scan_date+'&to='+o.scan_date+'&smin=0'+q;
+ $('kpis').innerHTML=[['Breakouts today',t.total,ex('&view=charts')],['UP',t.up,ex('&dir=UP')],['DOWN',t.down,ex('&dir=DOWN')]]
+  .concat(TFS.map(tf=>[tf,t.by_tf[tf]||0,ex('&tf='+tf)])).map(([a,b,l])=>`<a class="kpi" href="${l}" style="text-decoration:none;color:inherit"><span class="muted small">${a}</span><b>${b}</b></a>`).join('');
+ Plotly.newPlot('trend',[{type:'bar',name:'UP',x:o.days.map(d=>d.date),y:o.days.map(d=>d.up),marker:{color:'#00875a'}},
+  {type:'bar',name:'DOWN',x:o.days.map(d=>d.date),y:o.days.map(d=>-d.down),marker:{color:'#de350b'}}],
+  {barmode:'relative',margin:{t:10,l:40,r:10,b:40},height:260,legend:{orientation:'h'}},{displaylogo:false,responsive:true});
+ $('trend').on('plotly_click',e=>location.href='explore.html?from='+e.points[0].x+'&to='+e.points[0].x+'&smin=0&view=charts');
+ $('idx').innerHTML=o.indices.map(i=>`<div class="kpi"><a href="stock.html?i=index&s=${i.symbol}">${i.symbol}</a><b>${i.close}</b>
+  <span class="${i.chg>=0?'UP':'DOWN'}">${i.chg>=0?'+':''}${i.chg}%</span><div class="small">${i.recent.map(r=>esc(r.timeframe+' '+pretty(r.pattern)+' '+r.direction+' '+r.breakout_date)).join('<br>')||'no recent breakout'}</div></div>`).join('');
+ const row=r=>`<div class="r"><a href="stock.html?i=${r.instrument}&s=${encodeURIComponent(r.symbol)}"><b>${esc(r.symbol)}</b></a> ${esc(r.mtf_list||r.timeframe)} ${esc(pretty(r.pattern))}
+  <span class="${r.direction||''}">${r.direction||r.bias}</span> score ${r.score} ${r.id?`<a href="chart.html?i=${r.instrument}&s=${encodeURIComponent(r.symbol)}&id=${r.id}">chart</a>`:''}</div>`;
+ $('mtf').innerHTML=o.mtf_today.map(row).join('')||'<p class="muted">None today.</p>';
+ $('wl').innerHTML=o.watch_near.map(row).join('')||'<p class="muted">None (add symbols to my_watchlist.txt).</p>';
+})().catch(e=>$('meta').textContent='Could not load data: '+e.message);
+</script></body></html>

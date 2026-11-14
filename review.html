@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Review</title></head><body><main>
+<h1>Your reviews</h1><p>Mark charts with <b>Good</b> / <b>Bad</b> / <b>Wrong type</b>. Marks are saved <b>on this device</b>. To use them for tuning:</p>
+<ol><li>Tap <b>Export CSV</b>.</li><li>Upload the file to the private repo folder <code>reviews/</code> (e.g. <code>reviews/2026-11.csv</code>).</li>
+<li>Run the workflow with mode <b>tune</b>. It writes <code>tuning/report.md</code>, suggested thresholds and (with enough labels) the learned ranker.</li></ol>
+<p class="muted">Aim for 150-300 marks across timeframes and patterns, including bad ones.</p>
+<div class="pager"><button class="btn" id="exp">Export CSV</button><label class="btn">Import CSV <input type="file" id="imp" accept=".csv" style="display:none"></label>
+<button class="btn" id="clr">Clear all</button><span id="n" class="muted"></span></div>
+<div class="kpis" id="k"></div><div class="wrap"><table id="t"></table></div></main><script src="common.js"></script><script src="chartlib.js"></script><script>
+nav('Review');const COLS=['id','label','correct_type','note','ts','symbol','instrument','timeframe','pattern','breakout_time'];
+function draw(){const v=Object.values(REV.get()).sort((a,b)=>a.ts<b.ts?1:-1);$('n').textContent=v.length+' marks';
+ const c=l=>v.filter(x=>x.label===l).length;$('k').innerHTML=[['Good',c('good')],['Bad',c('bad')],['Wrong type',c('wrong_type')]].concat(TFS.map(t=>[t,v.filter(x=>x.timeframe===t).length]))
+  .map(([a,b])=>`<div class="kpi"><span class="muted small">${a}</span><b>${b}</b></div>`).join('');
+ $('t').innerHTML='<tr><th>Mark</th><th>Symbol</th><th>TF</th><th>Pattern</th><th>Breakout</th><th>Correct type</th><th>Note</th><th></th></tr>'+v.map(x=>`<tr><td>${{good:'Good',bad:'Bad',wrong_type:'Wrong type'}[x.label]}</td>
+  <td>${esc(x.symbol)}</td><td>${x.timeframe}</td><td>${esc(pretty(x.pattern))}</td><td><a href="chart.html?i=${x.instrument}&s=${encodeURIComponent(x.symbol)}&id=${x.id}">${esc(x.breakout_time)}</a></td>
+  <td>${esc(x.correct_type)}</td><td><input data-note="${x.id}" value="${esc(x.note)}" style="width:160px"></td><td><button class="btn" data-del="${x.id}">×</button></td></tr>`).join('');
+ $('t').querySelectorAll('[data-note]').forEach(i=>i.onchange=()=>{const a=REV.get();a[i.dataset.note].note=i.value;REV.set(a);});
+ $('t').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const a=REV.get();delete a[b.dataset.del];REV.set(a);draw();});}
+$('exp').onclick=()=>csvDownload(Object.values(REV.get()).map(x=>Object.fromEntries(COLS.map(k=>[k,x[k]??'']))),'reviews_'+today()+'.csv');
+$('clr').onclick=()=>{if(confirm('Delete all marks on this device? Export first.')){REV.set({});draw();}};
+$('imp').onchange=async e=>{const t=await e.target.files[0].text();const [h,...ls]=t.trim().split(/\r?\n/);const k=h.split(',');const a=REV.get();
+ ls.forEach(l=>{const v=l.match(/("([^"]|"")*"|[^,]*)(,|$)/g).map(s=>s.replace(/,$/,'').replace(/^"|"$/g,'').replace(/""/g,'"'));const o=Object.fromEntries(k.map((x,i)=>[x,v[i]||'']));if(o.id)a[o.id]=o;});REV.set(a);draw();};
+draw();
+</script></body></html>

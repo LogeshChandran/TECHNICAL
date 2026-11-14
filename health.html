@@ -1,0 +1,8 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Data health</title></head><body><main><h1>Data health</h1><div id="h"></div></main><script src="common.js"></script><script>
+nav('Data health');
+j('data/health.json').then(H=>{let s='<div class="wrap"><table><tr><th>Date</th><th>Mode</th><th>Status</th><th>1D</th><th>1H</th><th>4H</th><th>1W</th><th>1M</th><th>New</th><th>Rejected (quality)</th><th>Illiquid</th><th>Download failed</th><th>No hourly</th><th>Split/bonus skipped</th><th>Strictness</th></tr>';
+H.forEach(h=>{const c=h.coverage;s+=`<tr><td>${esc(h.date)}</td><td>${esc(h.mode)}</td><td class="${esc(h.status)}">${esc(h.status)}</td>`+TFS.map(k=>`<td>${c[k].ok}/${c[k].requested} (${Math.round(c[k].pct*100)}%)</td>`).join('')+
+`<td title="${esc(JSON.stringify(h.new_by_timeframe||{}))}">${h.new_breakouts}</td><td>${h.below_quality_rejected??''}</td><td>${h.illiquid_skipped}</td><td title="${esc((h.download_failed||[]).join(', '))}">${h.download_failed_count}</td>
+<td title="${esc((h.no_hourly||[]).join(', '))}">${(h.no_hourly||[]).length}</td><td>${h.corporate_action_skipped}</td><td>${esc(h.strictness??'')}</td></tr>`;});
+s+='</table></div>';if(H[0])s+='<h2>Latest run details</h2><pre style="white-space:pre-wrap">'+esc(JSON.stringify(H[0],null,1))+'</pre>';$('h').innerHTML=s;});
+</script></body></html>

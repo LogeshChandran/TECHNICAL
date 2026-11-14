@@ -1,0 +1,12 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Pattern stats</title></head><body><main>
+<h1>Pattern stats</h1><p class="muted">What happened to the breakouts this scanner recorded. Descriptive only, not a forecast. Rows marked <b>small sample</b> have fewer than 30 closed cases.</p>
+<div class="chips" id="tf"></div><div class="wrap"><table id="t"></table></div></main><script src="common.js"></script><script>
+nav('Pattern stats');let R=[],sel='';
+function draw(){const rows=R.filter(r=>!sel||r.timeframe===sel).sort((a,b)=>b.closed-a.closed);
+ $('t').innerHTML='<tr><th>Pattern</th><th>Group</th><th>TF</th><th>Breakouts</th><th>Closed</th><th>Target hit %</th><th>False breakout %</th><th>Target hit</th><th>False</th><th>Back inside</th><th>Expired</th><th>Open</th><th>Avg max fav %</th><th>Avg score</th><th></th></tr>'+
+ rows.map(r=>`<tr><td><a href="explore.html?pat=${r.pattern}&tf=${r.timeframe}&smin=0">${esc(pretty(r.pattern))}</a></td><td>${esc(r.family)}</td><td>${r.timeframe}</td><td>${r.n}</td><td>${r.closed}</td>
+  <td class="target_hit">${r.hit_rate??'-'}</td><td class="false_breakout">${r.false_rate??'-'}</td><td>${r.target_hit}</td><td>${r.false_breakout}</td><td>${r.back_inside}</td><td>${r.expired}</td><td>${r.open}</td>
+  <td>${r.avg_max_fav}</td><td>${r.avg_score}</td><td class="muted">${r.small_sample?'small sample':''}</td></tr>`).join('');}
+j('data/stats.json').then(x=>{R=x;$('tf').innerHTML=['',...TFS].map(t=>`<span class="chip ${t===sel?'on':''}" data-t="${t}">${t||'All'}</span>`).join('');
+ $('tf').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{sel=c.dataset.t;$('tf').querySelectorAll('.chip').forEach(y=>y.classList.toggle('on',y===c));draw();});draw();});
+</script></body></html>
