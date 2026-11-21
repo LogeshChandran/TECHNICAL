@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Stock view</title><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script></head><body><main>
+<h1 id="h">Loading...</h1><div id="info" class="muted"></div><div class="kpis" id="kpis" style="margin:8px 0"></div>
+<h2>Overview chart (every breakout marked - tap a marker to jump to its chart)</h2>
+<div class="chips" id="tfs"></div><div id="ov" class="chart"></div>
+<h2>Active now (forming, near breakout)</h2><div id="act" class="rows"></div>
+<h2>All pattern charts</h2><div id="flt"></div><label class="small"><input type="checkbox" id="ema"> EMA 20/50</label> <span id="count" class="muted"></span>
+<div id="cards"></div></main><script src="common.js"></script><script src="chartlib.js"></script><script>
+nav('');const U=new URLSearchParams(location.search),S=U.get('s'),I=U.get('i')||'stock';
+const f=fromURL({smin:0});f.sym=[S];f.inst=I;let ALL=[],tf=U.get('tf')||'1D';
+async function main(){const syms=await j('data/symbols.json'),info=syms.find(x=>x.s===S&&x.i===I)||{};
+ document.title=S+' - patterns';$('h').textContent=S+(info.name&&info.name!==S?' - '+info.name:'');
+ $('info').innerHTML=[I,info.sec,info.g].filter(Boolean).map(esc).join(' | ')+' | <a href="compare.html?s='+encodeURIComponent(S)+'">compare</a>';
+ ALL=await j('data/symbols/'+I+'_'+safeName(S)+'.json').catch(()=>[]);
+ const c=(k,v)=>ALL.filter(r=>r[k]===v).length;
+ $('kpis').innerHTML=[['Breakouts',ALL.length],['UP',c('direction','UP')],['DOWN',c('direction','DOWN')],['Reversal',c('family','reversal')],['Continuation',c('family','continuation')],
+  ['Target hit',c('outcome','target_hit')],['False breakout',c('outcome','false_breakout')],['Open',c('outcome','open')]].concat(TFS.map(t=>[t,c('timeframe',t)]))
+  .map(([a,b])=>`<div class="kpi"><span class="muted small">${a}</span><b>${b}</b></div>`).join('');
+ const has=TFS.filter(t=>ALL.some(r=>r.timeframe===t));if(!has.includes(tf)&&has.length)tf=has.includes('1D')?'1D':has[0];
+ $('tfs').innerHTML=TFS.map(t=>`<span class="chip ${t===tf?'on':''}" data-t="${t}">${t} (${c('timeframe',t)})</span>`).join('');
+ $('tfs').querySelectorAll('.chip').forEach(x=>x.onclick=()=>{tf=x.dataset.t;$('tfs').querySelectorAll('.chip').forEach(y=>y.classList.toggle('on',y===x));drawOverview(I,S,tf,'ov',ALL);});
+ drawOverview(I,S,tf,'ov',ALL,{bars:300});
+ const W=(await j('data/watchlist.json')).filter(w=>w.symbol===S&&w.instrument===I);
+ $('act').innerHTML=W.map(w=>`<div class="r"><b>${w.timeframe}</b> ${esc(pretty(w.pattern))} (${w.bias}) score ${w.score} | close ${w.close} |
+  upper ${w.upper_level} (${w.dist_upper_atr} ATR) | lower ${w.lower_level} (${w.dist_lower_atr} ATR) <a href="chart.html?watch=1&i=${I}&s=${encodeURIComponent(S)}&t=${encodeURIComponent(w.time)}&tf=${w.timeframe}&p=${w.pattern}">chart</a></div>`).join('')||'<p class="muted">Nothing forming near a breakout.</p>';
+ cards();}
+function cards(){const rows=applyF(ALL,f).sort((a,b)=>a.breakout_time<b.breakout_time?1:-1);$('count').textContent=rows.length+' charts';
+ const box=$('cards');box.innerHTML='';rows.forEach(r=>card(r,box,{ema:$('ema').checked,others:ALL.filter(o=>o.timeframe===r.timeframe)}));}
+$('ema').onchange=cards;
+filterPanel($('flt'),f,{noSym:true,noInst:true,noGroup:true,noSec:true,lock:{sym:[S],inst:I,smin:0}},cards);
+main().catch(e=>$('h').textContent='Error: '+e.message);
+</script></body></html>

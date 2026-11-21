@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Explore breakouts</title><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script></head><body><main>
+<h1>Explore breakouts</h1><div id="flt"></div>
+<div class="pager"><button class="btn" data-v="table">Table</button><button class="btn" data-v="charts">Charts</button>
+<label class="small"><input type="checkbox" id="ema"> EMA 20/50</label><button class="btn" id="csv">Download CSV</button><span id="count" class="muted"></span></div>
+<div id="out"></div><div class="pager" id="pg"></div>
+<p class="muted">Score = pattern quality, not a probability. Not investment advice.</p></main><script src="common.js"></script><script src="chartlib.js"></script><script>
+nav('Explore');const f=fromURL();let ROWS=[];const PER=50;
+if(!location.search){f.tf=['1D','1W','1M'];f.smin=70;}
+const COLS=[['breakout_time','Time'],['watch',''],['symbol','Symbol'],['instrument','Type'],['timeframe','TF'],['pattern','Pattern'],['family','Group'],['direction','Dir'],['score','Score'],
+ ['breakout_quality','Quality'],['rank_prob','Rank'],['close','Close'],['target','Target'],['target_pct','Tgt %'],['volume_ratio','Vol x'],['rs_63d','RS 3m'],
+ ['mtf_list','Timeframes'],['outcome','Outcome'],['max_fav_pct','Max fav %'],['sector','Sector'],['event','Event']];
+async function load(){ROWS=await loadRows(f);render();}
+function render(){const rows=applyF(ROWS,f),k=f.sort;rows.sort((a,b)=>{const x=a[k]??'',y=b[k]??'';return (x>y?1:x<y?-1:0)*(f.desc?-1:1);});
+ const pages=Math.max(1,Math.ceil(rows.length/PER));f.page=Math.min(f.page,pages);const sl=rows.slice((f.page-1)*PER,f.page*PER);
+ $('count').textContent=rows.length+' breakouts';document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===f.view));
+ const out=$('out');out.innerHTML='';out.className='';window.__rows=rows;
+ if(f.view==='charts'){sl.forEach(r=>card(r,out,{ema:$('ema').checked}));}
+ else if(innerWidth<700){out.className='rows';out.innerHTML=sl.map(r=>`<div class="r"><a href="stock.html?i=${r.instrument}&s=${encodeURIComponent(r.symbol)}"><b>${esc(r.symbol)}</b></a>${r.watch||''}
+   ${r.timeframe} ${esc(pretty(r.pattern))} <span class="${r.direction}">${r.direction}</span> s${r.score} <span class="${esc(r.breakout_quality)}">${esc(r.breakout_quality)}</span>
+   ${isNew(r)?'<span class="new">new</span>':''}<br><span class="small muted">${esc(r.breakout_time)} | close ${r.close} tgt ${r.target} | <span class="${esc(r.outcome)}">${esc(String(r.outcome).replace(/_/g,' '))}</span></span>
+   <a href="chart.html?i=${r.instrument}&s=${encodeURIComponent(r.symbol)}&id=${r.id}">chart</a></div>`).join('');}
+ else{out.className='wrap';let h='<table><tr><th>Chart</th>'+COLS.map(c=>`<th data-k="${c[0]}">${c[1]}${f.sort===c[0]?(f.desc?' ▼':' ▲'):''}</th>`).join('')+'</tr>';
+  sl.forEach(r=>{h+=`<tr><td><a href="chart.html?i=${r.instrument}&s=${encodeURIComponent(r.symbol)}&id=${r.id}">view</a>${isNew(r)?'<span class="new">new</span>':''}</td>`+COLS.map(c=>{let v=r[c[0]];
+   if(c[0]==='pattern')v=pretty(v);if(c[0]==='outcome')v=String(v).replace(/_/g,' ');
+   if(c[0]==='symbol')return `<td><a href="stock.html?i=${r.instrument}&s=${encodeURIComponent(v)}">${esc(v)}</a></td>`;
+   return `<td class="${esc(['direction','outcome','breakout_quality'].includes(c[0])?r[c[0]]:'')}">${esc(num(v))}</td>`;}).join('')+'</tr>';});
+  out.innerHTML=h+'</table>';out.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{f.desc=f.sort===th.dataset.k?1-f.desc:1;f.sort=th.dataset.k;toURL(f);render();});}
+ $('pg').innerHTML=pages>1?`<button class="btn" id="pv" ${f.page<=1?'disabled':''}>◀</button> page ${f.page} / ${pages} <button class="btn" id="nx" ${f.page>=pages?'disabled':''}>▶</button>`:'';
+ if($('pv')){$('pv').onclick=()=>{f.page--;toURL(f);render();scrollTo(0,0);};$('nx').onclick=()=>{f.page++;toURL(f);render();scrollTo(0,0);};}}
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{f.view=b.dataset.v;toURL(f);render();});
+$('ema').onchange=render;$('csv').onclick=()=>csvDownload(window.__rows||[],'breakouts_filtered.csv');
+(async()=>{const m=await j('data/meta.json');if(!new URLSearchParams(location.search).has('from')&&!f.from)f.from=daysAgo(90,m.scan_date);
+ filterPanel($('flt'),f,{},load);await load();})().catch(e=>$('count').textContent='Could not load data: '+e.message);
+</script></body></html>
