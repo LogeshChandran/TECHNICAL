@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Breakouts by date</title></head><body><main>
+<h1>Breakouts by date</h1><p class="muted">Every date, including all history from the first run. <b>Charts</b> opens every chart of that day on one page.</p>
+<input id="q" placeholder="Filter e.g. 2026-10" style="width:150px"><div class="wrap"><table id="t"></table></div></main><script src="common.js"></script><script>
+nav('By date');let D=[];
+const a=(d,n,x)=>n?`<a href="explore.html?from=${d}&to=${d}&smin=0${x||''}">${n}</a>`:'0';
+function draw(){const q=$('q').value.trim();let h='<tr><th>Date</th><th>Charts</th><th>Total</th><th>Stocks</th><th>Indices</th><th>UP</th><th>DOWN</th>'+TFS.map(t=>'<th>'+t+'</th>').join('')+'<th>CSV</th></tr>';
+ D.filter(r=>!q||r.date.startsWith(q)).forEach(r=>{h+=`<tr><td>${r.date}</td><td><a href="explore.html?from=${r.date}&to=${r.date}&smin=0&view=charts">Charts</a></td><td>${a(r.date,r.total)}</td>
+  <td>${a(r.date,r.stocks,'&inst=stock')}</td><td>${a(r.date,r.indices,'&inst=index')}</td><td class="UP">${a(r.date,r.up,'&dir=UP')}</td><td class="DOWN">${a(r.date,r.down,'&dir=DOWN')}</td>`+
+  TFS.map(t=>'<td>'+a(r.date,r[t],'&tf='+t)+'</td>').join('')+`<td><a href="reports/by_date/${r.date}.csv">csv</a></td></tr>`;});$('t').innerHTML=h;}
+j('data/dates.json').then(x=>{D=x;draw();});$('q').oninput=draw;
+</script></body></html>

@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Compare</title><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script></head><body><main>
+<h1>Compare</h1><p class="muted">Up to 4 charts side by side (e.g. a stock and its sector index). Breakouts are marked.</p>
+<input id="add" list="sl" placeholder="add symbol + Enter" style="width:200px"><datalist id="sl"></datalist>
+<div class="chips" id="sel"></div><div class="chips" id="tfs"></div><div class="grid" id="g" style="grid-template-columns:repeat(auto-fill,minmax(420px,1fr))"></div></main><script src="common.js"></script><script src="chartlib.js"></script><script>
+nav('Compare');const U=new URLSearchParams(location.search);let sel=(U.get('s')||'').split(',').filter(Boolean),tf=U.get('tf')||'1D',SY=[];
+async function draw(){U.set('s',sel.join(','));U.set('tf',tf);history.replaceState(null,'','?'+U);
+ $('sel').innerHTML=sel.map(s=>`<span class="chip on" data-s="${esc(s)}">${esc(s)}<span class="x">×</span></span>`).join('');
+ $('sel').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{sel=sel.filter(x=>x!==c.dataset.s);draw();});
+ $('tfs').innerHTML=TFS.map(t=>`<span class="chip ${t===tf?'on':''}" data-t="${t}">${t}</span>`).join('');
+ $('tfs').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{tf=c.dataset.t;draw();});
+ $('g').innerHTML='';for(const [k,s] of sel.entries()){const e=SY.find(x=>x.s===s)||{i:'stock'};const box=document.createElement('div');box.className='card';
+  box.innerHTML=`<h3><a href="stock.html?i=${e.i}&s=${encodeURIComponent(s)}">${esc(s)}</a> ${tf}</h3><div id="cmp${k}"></div>`;$('g').appendChild(box);
+  const recs=await j('data/symbols/'+e.i+'_'+safeName(s)+'.json').catch(()=>[]);drawOverview(e.i,s,tf,'cmp'+k,recs,{bars:200,height:380,
+   onPick:id=>location.href='chart.html?i='+e.i+'&s='+encodeURIComponent(s)+'&id='+id});}}
+j('data/symbols.json').then(x=>{SY=x;$('sl').innerHTML=x.map(s=>`<option value="${esc(s.s)}">${s.i}</option>`).join('');draw();});
+$('add').onkeydown=e=>{if(e.key!=='Enter')return;const v=$('add').value.trim().toUpperCase();$('add').value='';if(v&&!sel.includes(v)&&sel.length<4){sel.push(v);draw();}};
+</script></body></html>

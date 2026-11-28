@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="style.css"><title>Sectors</title><script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script></head><body><main>
+<h1>Sector view</h1><p class="muted">Stock breakouts per sector. Many breakouts in one direction = the sector is moving as a group.</p>
+<div class="chips" id="w"></div><div id="hm"></div><div id="tbl" class="wrap"></div></main><script src="common.js"></script><script src="chartlib.js"></script><script>
+nav('Sectors');let S,win='30';
+function draw(){const rows=S[win]||[],top=rows.slice(0,30);
+ Plotly.newPlot('hm',[{type:'bar',orientation:'h',name:'UP',y:top.map(r=>r.sector),x:top.map(r=>r.up),marker:{color:'#00875a'}},
+  {type:'bar',orientation:'h',name:'DOWN',y:top.map(r=>r.sector),x:top.map(r=>-r.down),marker:{color:'#de350b'}}],
+  {barmode:'relative',height:Math.max(300,24*top.length+80),margin:{l:200,r:10,t:10,b:30},yaxis:{autorange:'reversed'},legend:{orientation:'h'}},{displaylogo:false,responsive:true});
+ $('hm').on('plotly_click',e=>location.href='explore.html?inst=stock&smin=0&from='+daysAgo(+win)+'&sec='+encodeURIComponent(e.points[0].y));
+ $('tbl').innerHTML='<table><tr><th>Sector</th><th>UP</th><th>DOWN</th><th>Net</th><th>Stocks</th><th>Top</th></tr>'+rows.map(r=>`<tr><td><a href="explore.html?inst=stock&smin=0&from=${daysAgo(+win)}&sec=${encodeURIComponent(r.sector)}">${esc(r.sector)}</a></td>
+  <td class="UP">${r.up}</td><td class="DOWN">${r.down}</td><td class="${r.net>=0?'UP':'DOWN'}">${r.net}</td><td>${r.stocks}</td><td>${r.top.map(s=>`<a href="stock.html?i=stock&s=${encodeURIComponent(s)}">${esc(s)}</a>`).join(' ')}</td></tr>`).join('')+'</table>';}
+j('data/sectors.json').then(x=>{S=x;$('w').innerHTML=['7','30','90'].map(k=>`<span class="chip ${k===win?'on':''}" data-k="${k}">${k} days</span>`).join('');
+ $('w').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{win=c.dataset.k;$('w').querySelectorAll('.chip').forEach(y=>y.classList.toggle('on',y===c));draw();});draw();});
+</script></body></html>
